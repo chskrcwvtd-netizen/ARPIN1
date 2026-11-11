@@ -289,9 +289,13 @@ RenderOutput renderMusic(const AudioState& state, const RenderConfig& config, in
             live = est.valid ? makeScale(est.root, est.mode, state.customScale) : manual;
             return live;
         }
-        if (scaleByBar.empty()) {
+        // Grow through the requested bar. The first call is often bar 0; stopping
+        // there would make every later bar fall back to the manual key.
+        if (bar < 0)
+            bar = 0;
+        if ((int) scaleByBar.size() <= bar) {
             KeyEstimate prev;
-            const int limit = std::max(0, bar) + 1;
+            const int limit = bar + 1;
             scaleByBar.resize((size_t) limit);
             for (int b = 0; b < limit; ++b) {
                 float hist[12] {};

@@ -432,6 +432,28 @@ void testSynthAndSwap() {
     swap.drain();
 }
 
+void testAutoKeyLaterBars() {
+    using namespace phrasearp;
+    AudioState state = makeInitState();
+    for (auto& bar : state.chords.bars) {
+        bar.set = true;
+        bar.notes = {53, 56, 60};
+    }
+    RenderConfig cfg = defaultRenderConfig();
+    cfg.autoKey = true;
+    cfg.keyRoot = 0;
+    cfg.scaleType = ScaleType::Major;
+    cfg.color = 0.f;
+    const int64_t phrase = ticksPerBar(4, 4) * cfg.phraseBars;
+    const RenderOutput out = renderMusic(state, cfg, 0, phrase, 120.0, 4, 4);
+    CHECK(!out.onsets.empty());
+    if (!out.onsets.empty() && pcOf(out.onsets.back().note) != 5) {
+        std::cerr << "auto-key close ";
+        dumpNotes(onsets(out));
+    }
+    CHECK(pcOf(out.onsets.back().note) == 5);
+}
+
 void testKeyEstimate() {
     using namespace phrasearp;
     float hist[12] {};
@@ -464,6 +486,7 @@ int main() {
     testLock();
     testSerializeAndMidi();
     testSynthAndSwap();
+    testAutoKeyLaterBars();
     testKeyEstimate();
     if (gFails == 0) {
         std::cout << "ok\n";
