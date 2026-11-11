@@ -1,0 +1,58 @@
+# Döntések
+
+A spec a 9. szakasznál véget ér. A 10. és 11. szakasz nem érkezett meg, a 12. (seedelt probability) csak hivatkozásként szerepel. Ezekre a hiányokra egy-egy mondatos döntés:
+
+- A probability pozíció-hash (`stepHash`), nem soros véletlengenerátor, mert így a blokkméret nem változtathatja meg, hogy egy lépés megszólal-e.
+- A 0% probability soha nem szólal meg, a 100% mindig, a köztes érték akkor szólal meg, ha a hash maradéka ezrelékben kisebb, mint a probability tízszerese.
+- A 10–11. szakaszhoz nem találtam ki új funkciót: nincs MPE, nincs hangsáv bemenet, és nincs a leírt lane-eken túli sáv.
+- A JUCE a `8.0.17-security` címkére van rögzítve, és a CMake tölti le, nem a repóba másoltuk, hogy a biztonsági javítás egy helyen legyen.
+- A véletlen xoshiro256**, lane-enként külön splitmix-folyamból; `std::rand` sehol nincs.
+- A seed 32 bites, a felületen nyolc hexadecimális karakter, hogy be lehessen gépelni és másolni.
+- A New Seed a régi seedet és egy számlálót keveri a saját PRNG-vel, nem az operációs rendszer véletlenét hívja.
+- A Type lane adja a hangindításokat, a többi lane-t a saját playheadjén olvassuk, így a polimetria nem tolja el a ritmust.
+- Az Accent a velocity lépés jelzője, nem külön lane; a pluginban az alapérték +20, ahogy a spec példája írja.
+- Az Evolve lépésenkénti hash-sel dönt, nem közös folyammal, hogy a zárolt lépés ne csúsztassa el a többit.
+- A Lock csak a Generate és az Evolve tárolt adatait védi; lejátszáskor a súlyos ütés és a fráziszárás továbbra is érvényesül.
+- A Random irány seedelt permutáció, a Random Walk pedig a pozícióból számolt, periódusos járás, nem a session történetéből.
+- A negatív timing legfeljebb fél lépés lehet, mert a spec ennyit enged, és így nem kell latenciát bejelenteni.
+- A rács előtt legfeljebb egy harmincketteddel érkező akkord a következő rácspontra vár, a későbbi azonnal érvényes, mert a múltat nem írjuk vissza.
+- Az automatikus hangnem csak dúr és természetes moll, Krumhansl–Schmuckler korrelációval, 0,05 hiszterézissel, hogy a mód ne ugráljon.
+- Egy lenyomott hang skálabeli hármashangzatot kap akkordhangkészletnek, mert a spec szerint egy hangnál a skála építi a készletet.
+- Az Audition alapból be van kapcsolva: álló hostnál a belső óra a akkordsávot játssza, hogy az Init betöltés után frázisként szóljon.
+- Ha a host álló állapotban nem hívja a processzort, az Audition nem tud megszólalni; ilyenkor a transport vagy egy leütés kell.
+- Az Init kézzel írt skálafok-dallam a C–Am–F–C meneten, Variation 0 és AAAA sablon, lapos kontúr, hogy a leírt vonal szóljon, a zárás pedig megduplázza az utolsó gate-et.
+- A history 32 állapota a plugin állapotába van sorosítva, nem csak a memóriában él.
+- Az export hossza, a feel beégetése és az akkordsáv külön MIDI-sávja nem host-paraméter, hanem a preset mellé mentett szállítási választás.
+- A drag és az export a frázis elejétől renderel, nem a playhead közepétől, hogy a piano roll zárt frázist kapjon.
+- A Capture az utolsó 64 ütem ténylegesen kiküldött eseménye, egyetlen tempóval, a mentés pillanatának tempójával.
+- A makró a bázis körül ±mélységgel tér el, a cél és a mélység a plugin állapotában van, nem host-paraméter.
+- A swing és a groove összeadódik, az alap groove Straight, így alapból csak a Swing tekerő hallatszik.
+- A Humanize alapból 0; a Live kapcsoló a frázisindexet belekeveri a hash-be, kikapcsolva a live és az offline egyezik.
+- A preview csak a generált hangokat szólaltatja, a lenyomott akkordot és a CC-t nem.
+- A Thru alapból ki van kapcsolva, a CC64 latch, és nem megy tovább a kimenetre.
+- Az euklideszi ritmus alapból ki van kapcsolva; a Bresenham-eloszlás úgy van forgatva, hogy az első lépés ütés legyen.
+- Súlyos ütés az ütem 1. és 3. negyede.
+- A kérdés–felelet alapból be van kapcsolva.
+- Az akkordsáv a frázis hosszával hurkol, és 16 ütemnyi tárolója van.
+- Az import elutasítja az üres, a nem MIDI és a 16 ütemnél nem előbb kezdődő anyagot, és a meglévő patternt békén hagyja.
+- A rácsot az 1/16, 1/32, 1/16-trióla és 1/8-trióla közül a legkisebb átlagos hiba választja.
+- Az egyéni skálamaszk a hangnem alapjához képest értendő, és a 0. bit mindig be van kapcsolva.
+- A tesztek saját harnesszel futnak, Catch2 nélkül, hogy a motor JUCE nélkül is leforduljon.
+- A minta cseréje lépéshatáron lock-free pointercsere; a másolat foglalhat, a mintánkénti hurok nem.
+- Az akkordváltás blokkhatáron pontos, kivéve ha a korai akkord rácspontja a blokk belsejébe esik, mert akkor ott vágunk.
+- A preview 16 szólam: pengetés, kétoperátoros FM-harang és lágy billentyű, zaj és `std::rand` nélkül.
+- A Retrigger alapból Off, hogy akkordváltáskor a minta ne induljon újra.
+- Ha a teljes pitch lane zárolt, a Pitch Mode megmarad; egyébként a Generate Index módba ír.
+- A key switch alapból ki van kapcsolva, a tartománya C1–G1 (24–31), és ezek a hangok nem számítanak harmóniának.
+- A patternlánc alapból üres, tehát ki van kapcsolva.
+- A kimenő MIDI-csatorna alapból 1.
+- A hanghossz alapból gate százalék.
+- A CC1 alapból 74, a CC2 alapból 1.
+- A gyári tartalom 4/4; a host metruma adja az ütem hosszát.
+- Az Octaves az Index mód hangkészletének szélességét korlátozza, a Low és High minden módot keményen vág.
+- A slotváltás azonnal, ütem végén vagy frázis végén lép életbe; a generált tartalom ettől függetlenül a következő lépéshatáron cserélődik.
+- A bal kattintás slotot választ, a jobb kattintás az aktuális mintát abba a slotba másolja, a Star pedig megjelöli és a historyba teszi az állapotot.
+- A számítógép-billentyű csak akkor ad virtuális MIDI-t, ha nem szövegmező, combo vagy csúszka van fókuszban.
+- A lejátszó hostnál a frázispozíció a PPQ-ból jön; ugrás vagy visszafelé mozdulás hangot enged, hogy ne ragadjon be nota.
+- A VST3 Linuxon is be van kapcsolva, ha a JUCE engedi; Windows- és macOS-binárist ez a gép nem készített.
+- Az FL Studio 25 MIDI-kimenetét nem lehetett ellenőrizni, ezért a Setup lap és a README a routingot leírja, és kimondja, hogy nincs lefuttatott hostteszt.
